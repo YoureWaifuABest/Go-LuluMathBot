@@ -234,7 +234,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 
 		if strings.EqualFold(argv[0], "!source") {
-			s.ChannelMessageSend(m.ChannelID, "Github: not made yet")
+			s.ChannelMessageSend(m.ChannelID, "Github: https://github.com/YoureWaifuABest/Go-LuluMathBot")
 			return
 		}
 
