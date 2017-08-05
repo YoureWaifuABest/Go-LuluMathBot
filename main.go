@@ -16,7 +16,7 @@ var buffer = make([][]byte, 0)
 var token string
 
 func init() {
-	token = readCFG()
+	token = readFileToString("config", 59)
 }
 
 func main() {
@@ -154,17 +154,6 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			return
 		}
 
-		/* 
-		if strings.EqualFold(argv[0], "!leave") {
-			if _, ok := s.VoiceConnections[gID]; ok {
-
-				s.VoiceConnections[gID].Disconnect()
-				return
-			}
-			s.ChannelMessageSend(m.ChannelID, "Error: Bot is not currently connected to a voice channel in your server!")
-			return
-		}*/
-
 		/* Join discord voice channel */
 		if strings.EqualFold(argv[0], "!join") {
 			g, err := guildFromMessage(m, s)
@@ -179,6 +168,20 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 			_, err = s.ChannelVoiceJoin(g.ID, cID, false, true)
 			checkErrorSend(err, m, s)
+			return
+		}
+
+		if strings.EqualFold(argv[0], "!leave") {
+			g, err := guildFromMessage(m, s)
+			if checkErrorSend(err, m, s) {
+				return
+			}
+
+			if _, ok := s.VoiceConnections[g.ID]; ok {
+				s.VoiceConnections[g.ID].Disconnect()
+				return
+			}
+			s.ChannelMessageSend(m.ChannelID, "Error: Bot is not currently connected to a voice channel in your server!")
 			return
 		}
 
@@ -239,8 +242,21 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 
 		if strings.EqualFold(argv[0], "!license") {
-			// Eventually have this echo LICENSE file,
-			// and include bit about rito games attribution
+			license := readFileToString("LICENSE", 1058)
+			var embed discordgo.MessageEmbed
+			embed.Color = 0xCC00CC
+			embed.Title = "License"
+			embed.Description = license
+			s.ChannelMessageSendEmbed(m.ChannelID, &embed)
+			// include rito attribution here
+			embed.Title = "Attribution"
+			embed.Description = "LuluMathBot isn't endorsed by Riot games and "+
+			                    "doesn't reflect the views or opinions of Riot Games or anyone " +
+													"officially involved in producing or managing League of Legends. " +
+													"League of Legends and Riot Games are trademarks or registered " +
+													"trademarks of Riot Games, Inc. League of Legends © Riot Games, " +
+													"Inc."
+			s.ChannelMessageSendEmbed(m.ChannelID, &embed)
 			return
 		}
 
