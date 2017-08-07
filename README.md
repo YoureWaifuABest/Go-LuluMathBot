@@ -12,7 +12,8 @@ Eventually will have feature-parity with deprecated python version
 ## Installation
 1. `git clone [this repo]`
 2. Add your bot's token to config; it should be the only data there
-3. `go build`
+3. Add your API key to riotkey
+4. `go build`
 
 ## Todo:
 1. Feature-parity with original python version
