@@ -44,23 +44,23 @@ func main() {
 	}
 
 	// Loop until ctrl-c is received
-	fmt.Println("bot is now running. Press CTRL-C to exit.")
+	fmt.Println("LuluMathBot is now running. Press CTRL-C to exit.")
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
 	<-sc
 
-	// Close Discord
+	/* close discord connection */
 	dg.Close()
 }
 
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	var argv []string
 	var argc int
-	// Ignore all bot messages
+	/* Ignore all bot messages */
 	if m.Author.ID == s.State.User.ID {
 		return
 	}
-	if m.Content     == "" {
+	if m.Content == "" {
 		return
 	}
 
@@ -73,7 +73,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 
-	if strings.EqualFold(m.Content, "where are we going to go to?") {
+	if strings.EqualFold(m.Content, "where are we going to go?") {
 		s.ChannelMessageSend(m.ChannelID, "Sanctuary.")
 		return
 	}
@@ -224,7 +224,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			general.Name = "General"
 			general.Value = "`!help !source !license`"
 			calculations.Name = "Calculations"
-			calculations.Value = "`!reduction !lethality !damage`"
+			calculations.Value = "`!reduction !damage`"
 			static.Name = "Static Data"
 			static.Value = "`!champ !item`"
 			footer.Text = "Add help as an argument to any command to get help with it"
@@ -248,14 +248,14 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			embed.Title = "License"
 			embed.Description = license
 			s.ChannelMessageSendEmbed(m.ChannelID, &embed)
-			// include rito attribution here
+
 			embed.Title = "Attribution"
-			embed.Description = "LuluMathBot isn't endorsed by Riot games and "+
-			                    "doesn't reflect the views or opinions of Riot Games or anyone " +
-													"officially involved in producing or managing League of Legends. " +
-													"League of Legends and Riot Games are trademarks or registered " +
-													"trademarks of Riot Games, Inc. League of Legends © Riot Games, " +
-													"Inc."
+			embed.Description = "LuluMathBot isn't endorsed by Riot games and " +
+				"doesn't reflect the views or opinions of Riot Games or anyone " +
+				"officially involved in producing or managing League of Legends. " +
+				"League of Legends and Riot Games are trademarks or registered " +
+				"trademarks of Riot Games, Inc. League of Legends © Riot Games, " +
+				"Inc."
 			s.ChannelMessageSendEmbed(m.ChannelID, &embed)
 			return
 		}
@@ -301,6 +301,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			err = s.ChannelMessagesBulkDelete(m.ChannelID, mesIDs)
 			if err != nil {
 				s.ChannelMessageSend(m.ChannelID, "ERROR! "+err.Error())
+				/* this return's redundant; it's here in case something gets added after */
 				return
 			}
 			return
