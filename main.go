@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"sync"
 
 	"github.com/bwmarrin/discordgo"
 )
@@ -33,8 +34,11 @@ func main() {
 		return
 	}
 
-	// Register messageCreate func as a callback for MessageCreate events
+	/* Register messageCreate func as a callback for MessageCreate events */
 	dg.AddHandler(messageCreate)
+
+	/* Register handler for voiceStateUpdate events */
+	dg.AddHandler(voiceStateUpdate)
 
 	// Open a connection to Discord
 	err = dg.Open()
@@ -51,6 +55,114 @@ func main() {
 
 	/* close discord connection */
 	dg.Close()
+}
+
+/* 
+ * Does this lead to a memory leak?
+ * I don't know if any of these values are garbage collected
+ * Probably have to test in a bit
+ * 
+ * This also potentially doesn't work if one instance of the bot is used with multiple servers
+ * Probably not hard to fix, but since it's not an issue yet,
+ * I'm not fixing it (yet)
+ */
+var inChannel = struct {
+	sync.RWMutex
+	amount int
+	/* 
+	 * I'd like to make this an array or a struct instead
+	 * but it's a slight irritant, so have a slice instead
+	 * (even though a simple array's more applicable)
+	 */
+	user map[string][]bool
+}{user: make(map[string][]bool)}
+
+
+
+func voiceStateUpdate(s *discordgo.Session, v *discordgo.VoiceStateUpdate) {
+	/* Return if user is bot */
+	if v.UserID == s.State.User.ID {
+		return
+	}
+	var hasRole bool
+	hasRole = checkRole(s, v.GuildID, v.UserID, "344967760616620033")
+
+	/* 
+	 * This is the ID of our "Timeout Chair"
+	 * Obviously this only works with the server I use
+	 * If you want this feature, replace this with your favorite channel ID
+	 */
+	if v.ChannelID == "260959244050759680" && hasRole {
+		/* Check if user is stored in map */
+		if inChannel.user[v.UserID] == nil {
+			inChannel.user[v.UserID] = make([]bool, 5)
+			/*
+			 * There has to be a better way to do this.
+			 * Could easily store it in a byte and use bit-wise operations
+			 * Or maybe something else somewhat logical
+			 */
+
+			/* Initialize mute values */
+			if v.SelfMute {
+				inChannel.Lock()
+				inChannel.user[v.UserID][1] = true
+				inChannel.Unlock()
+			}
+			if v.SelfDeaf {
+				inChannel.Lock()
+				inChannel.user[v.UserID][2] = true
+				inChannel.Unlock()
+			}
+			if v.Mute {
+				inChannel.Lock()
+				inChannel.user[v.UserID][3] = true
+				inChannel.Unlock()
+			}
+			if v.Deaf {
+				inChannel.Lock()
+				inChannel.user[v.UserID][4] = true
+				inChannel.Unlock()
+			}
+		}
+
+		if inChannel.user[v.UserID][1] != v.SelfMute {
+			inChannel.user[v.UserID][1] = v.SelfMute
+			return
+		}
+
+		if inChannel.user[v.UserID][2] != v.SelfDeaf {
+			inChannel.user[v.UserID][2] = v.SelfDeaf
+			return
+		}
+
+		if inChannel.user[v.UserID][3] != v.Mute {
+			inChannel.user[v.UserID][3] = v.Mute
+			return
+		}
+		if inChannel.user[v.UserID][4] != v.Mute {
+			inChannel.user[v.UserID][4] = v.Mute
+			return
+		}
+
+		inChannel.Lock()
+		inChannel.user[v.UserID][0] = true
+		inChannel.amount += 1
+		inChannel.Unlock()
+
+		if inChannel.amount < 2 {
+			go spamPing(s, v)
+		}
+		return
+	}
+	if inChannel.user[v.UserID] != nil {
+		inChannel.Lock()
+		if inChannel.user[v.UserID][0] == true && hasRole {
+			inChannel.amount -= 1
+		}
+		inChannel.user[v.UserID][0] = false
+		inChannel.Unlock()
+	}
+	return
 }
 
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
@@ -85,6 +197,10 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	if strings.EqualFold(m.Content, "1v1 me") {
 		s.ChannelMessageSend(m.ChannelID, "http://mrwgifs.com/wp-content/uploads/2013/07/Randy-Marsh-Ready-To-Fight-At-The-Baseball-Game-Gif-On-South-Park.gif")
+	}
+
+	if strings.EqualFold(m.Content, "...") {
+		s.ChannelMessageSend(m.ChannelID, "http://i.imgur.com/ltIBvZ7.jpg")
 	}
 
 	if argc != 0 {
@@ -161,6 +277,10 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 				return
 			}
 
+			if checkRole(s, g.ID, m.Author.ID, "344967760616620033") {
+				return
+			}
+
 			cID, err := findUserChannel(m, s)
 			if checkErrorSend(err, m, s) {
 				return
@@ -174,6 +294,10 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		if strings.EqualFold(argv[0], "!leave") {
 			g, err := guildFromMessage(m, s)
 			if checkErrorSend(err, m, s) {
+				return
+			}
+
+			if checkRole(s, g.ID, m.Author.ID, "344967760616620033") {
 				return
 			}
 

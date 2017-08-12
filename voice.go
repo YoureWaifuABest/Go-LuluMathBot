@@ -51,33 +51,10 @@ func loadSound() error {
 	}
 }
 
-func guildFromMessage(m *discordgo.MessageCreate, s *discordgo.Session) (*discordgo.Guild, error) {
-	c, err := s.State.Channel(m.ChannelID)
-	if err != nil {
-		return nil, err
+func sendBuffer(vc *discordgo.VoiceConnection) {
+	for _, buff := range buffer {
+		vc.OpusSend <- buff
 	}
-
-	g, err := s.State.Guild(c.GuildID)
-	if err != nil {
-		return nil, err
-	}
-	return g, nil
-}
-
-func findUserChannel(m *discordgo.MessageCreate, s *discordgo.Session) (string, error) {
-	g, err := guildFromMessage(m, s)
-	if err != nil {
-		return "", err
-	}
-
-	/* Search for message sender in guild's voice states */
-	for _, vstate := range g.VoiceStates {
-		if vstate.UserID == m.Author.ID {
-			return vstate.ChannelID, nil
-		}
-	}
-
-	return "", fmt.Errorf("user is not in a channel")
 }
 
 func playSound(s *discordgo.Session, guildID, channelID string, amt int) (err error) {
@@ -89,9 +66,7 @@ func playSound(s *discordgo.Session, guildID, channelID string, amt int) (err er
 			vc.Speaking(true)
 
 			for i := 0; i != amt; i++ {
-				for _, buff := range buffer {
-					vc.OpusSend <- buff
-				}
+				sendBuffer(vc)
 			}
 
 			vc.Speaking(false)
@@ -111,9 +86,7 @@ func playSound(s *discordgo.Session, guildID, channelID string, amt int) (err er
 
 	// Send buffer data
 	for i := 0; i != amt; i++ {
-		for _, buff := range buffer {
-			vc.OpusSend <- buff
-		}
+		sendBuffer(vc)
 	}
 
 	// Stop speaking
@@ -125,4 +98,19 @@ func playSound(s *discordgo.Session, guildID, channelID string, amt int) (err er
 	vc.Disconnect()
 
 	return nil
+}
+
+func spamPing(s *discordgo.Session, v *discordgo.VoiceStateUpdate) {
+	vc, err := s.ChannelVoiceJoin(v.GuildID, v.ChannelID, false, true)
+	if err != nil {
+		return
+	}
+
+	vc.Speaking(true)
+	for inChannel.amount != 0 {
+		sendBuffer(vc)
+	}
+	vc.Speaking(false)
+	vc.Disconnect()
+	return
 }

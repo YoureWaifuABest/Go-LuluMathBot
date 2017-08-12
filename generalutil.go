@@ -27,6 +27,50 @@ func checkErrorPanic(err error) {
 	}
 }
 
+func checkRole(s *discordgo.Session, gID string, uID string, role string) bool {
+	member, err := s.GuildMember(gID, uID)
+	if err != nil {
+		return false
+	}
+
+	/* check if user has specific role */
+	for i := range member.Roles {
+		if member.Roles[i] == role {
+			return true
+		}
+	}
+	return false
+}
+
+func guildFromMessage(m *discordgo.MessageCreate, s *discordgo.Session) (*discordgo.Guild, error) {
+	c, err := s.State.Channel(m.ChannelID)
+	if err != nil {
+		return nil, err
+	}
+
+	g, err := s.State.Guild(c.GuildID)
+	if err != nil {
+		return nil, err
+	}
+	return g, nil
+}
+
+func findUserChannel(m *discordgo.MessageCreate, s *discordgo.Session) (string, error) {
+	g, err := guildFromMessage(m, s)
+	if err != nil {
+		return "", err
+	}
+
+	/* Search for message sender in guild's voice states */
+	for _, vstate := range g.VoiceStates {
+		if vstate.UserID == m.Author.ID {
+			return vstate.ChannelID, nil
+		}
+	}
+
+	return "", fmt.Errorf("user is not in a channel")
+}
+
 func getArgs(m *discordgo.MessageCreate) (argv []string, argc int) {
 	// necessary to write initial values into argv
 	argv = make([]string, 1, 1)
