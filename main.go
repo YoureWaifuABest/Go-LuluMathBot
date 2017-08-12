@@ -6,8 +6,8 @@ import (
 	"os/signal"
 	"strconv"
 	"strings"
-	"syscall"
 	"sync"
+	"syscall"
 
 	"github.com/bwmarrin/discordgo"
 )
@@ -57,11 +57,11 @@ func main() {
 	dg.Close()
 }
 
-/* 
+/*
  * Does this lead to a memory leak?
  * I don't know if any of these values are garbage collected
  * Probably have to test in a bit
- * 
+ *
  * This also potentially doesn't work if one instance of the bot is used with multiple servers
  * Probably not hard to fix, but since it's not an issue yet,
  * I'm not fixing it (yet)
@@ -69,15 +69,13 @@ func main() {
 var inChannel = struct {
 	sync.RWMutex
 	amount int
-	/* 
+	/*
 	 * I'd like to make this an array or a struct instead
 	 * but it's a slight irritant, so have a slice instead
 	 * (even though a simple array's more applicable)
 	 */
 	user map[string][]bool
 }{user: make(map[string][]bool)}
-
-
 
 func voiceStateUpdate(s *discordgo.Session, v *discordgo.VoiceStateUpdate) {
 	/* Return if user is bot */
@@ -87,7 +85,7 @@ func voiceStateUpdate(s *discordgo.Session, v *discordgo.VoiceStateUpdate) {
 	var hasRole bool
 	hasRole = checkRole(s, v.GuildID, v.UserID, "344967760616620033")
 
-	/* 
+	/*
 	 * This is the ID of our "Timeout Chair"
 	 * Obviously this only works with the server I use
 	 * If you want this feature, replace this with your favorite channel ID
