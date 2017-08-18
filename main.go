@@ -491,6 +491,42 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 				s.ChannelMessageSendEmbed(m.ChannelID, &embed)
 				return
 			}
+
+			itemlist, err := getValue("https://na1.api.riotgames.com/lol/static-data/v3/items?locale=en_US&tags=colloq")
+			if checkErrorPrint(err) {
+				return
+			}
+
+			var itemstring []byte
+			for i := 1; i != argc; i++ {
+				for _, c := range argv[i] {
+					itemstring = append(itemstring, byte(c))
+				}
+				itemstring = append(itemstring, ' ')
+			}
+			/*
+			 * Remove extrenuous space added at end
+			 * This solution isn't ideal, but it would require
+			 * A non-zero amount of effort to fix it.
+			 */
+			itemstring = itemstring[:len(itemstring)-1]
+
+			id := stringToID(string(itemstring), itemlist)
+			item := parseData(id, itemlist)
+			var embed discordgo.MessageEmbed
+			embed.Color = 0xCC00CC
+			embed.Title = item.Name
+			if item.Plaintext != "" {
+				embed.Description = item.Plaintext
+			}
+			if item.Description != "" {
+				var description discordgo.MessageEmbedField
+				description.Name = "Description"
+				description.Value = item.Description
+				embed.Fields = append(embed.Fields, &description)
+			}
+			s.ChannelMessageSendEmbed(m.ChannelID, &embed)
+			return
 		}
 
 		if strings.EqualFold(argv[0], "!champ") {
