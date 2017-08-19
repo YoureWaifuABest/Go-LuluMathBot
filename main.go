@@ -340,19 +340,23 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			var general discordgo.MessageEmbedField
 			var calculations discordgo.MessageEmbedField
 			var static discordgo.MessageEmbedField
+			var fun discordgo.MessageEmbedField
 			var footer discordgo.MessageEmbedFooter
 			embed.Color = 0xCC00CC
 			embed.Title = "Commands"
 			general.Name = "General"
 			general.Value = "`!help !source !license`"
 			calculations.Name = "Calculations"
-			calculations.Value = "`!reduction !damage`"
+			calculations.Value = "`!reduction`"
 			static.Name = "Static Data"
-			static.Value = "`!champ !item`"
+			static.Value = "`!item`"
+			fun.Name = "Fun commands"
+			fun.Value = "`!join, !missing, !leave`"
 			footer.Text = "Add help as an argument to any command to get help with it"
 			embed.Fields = append(embed.Fields, &general)
 			embed.Fields = append(embed.Fields, &calculations)
 			embed.Fields = append(embed.Fields, &static)
+			embed.Fields = append(embed.Fields, &fun)
 			embed.Footer = &footer
 			s.ChannelMessageSendEmbed(m.ChannelID, &embed)
 			return
@@ -427,6 +431,14 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 				return
 			}
 			return
+		}
+
+		/* Used mostly for testing purposes of new arg rewrite */
+		if strings.EqualFold(argv[0], "!print") {
+			if argc <= 1 {
+				s.ChannelMessageSend(m.ChannelID, "ERROR! Too few arguments.")
+			}
+			s.ChannelMessageSend(m.ChannelID, argv[1])
 		}
 	}
 
