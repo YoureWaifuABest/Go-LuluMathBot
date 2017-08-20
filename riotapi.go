@@ -110,7 +110,6 @@ func getValue(url string) ([]byte, error) {
 	}
 
 	if modify == true {
-		fmt.Println("Changed!")
 		r, err := http.NewRequest("GET", url, nil)
 		if checkErrorPrint(err) {
 			return nil, err
@@ -140,7 +139,6 @@ func getValue(url string) ([]byte, error) {
 
 		return body, nil
 	}
-	fmt.Println("Did not change!")
 	/* Spit the whole file out */
 	fileContents, err := ioutil.ReadFile("data/items")
 	if checkErrorPrint(err) {
