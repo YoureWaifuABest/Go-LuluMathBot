@@ -78,17 +78,16 @@ func parseData(itemID string, data []byte) (item item) {
 	return
 }
 
-func getValue(url string) ([]byte, error) {
+func getValue(url, file string) ([]byte, error) {
 	var modify bool
 	/*
 	 * Very basic caching, probably not very efficient
-	 * Hard coded file for now, since I'm not sure what I'm going to do with directories
-	 * This also assumes the "data" directory is already created,
+	 * This assumes the "data" directory is already created,
 	 * rather than creating the directory if it's not
 	 *
 	 * Obviously that's an issue which needs to be fixed at some point
 	 */
-	info, err := os.Stat("data/items")
+	info, err := os.Stat("data/" + file)
 	/*
 	 * If os.Stat claims the file does not exist, set modify to true
 	 * Meaning the file needs to be modified (in this case, created)
@@ -132,7 +131,7 @@ func getValue(url string) ([]byte, error) {
 		}
 
 		/* Dumps body into file */
-		err = ioutil.WriteFile("data/items", body, 0644)
+		err = ioutil.WriteFile("data/"+file, body, 0644)
 		if checkErrorPrint(err) {
 			return nil, err
 		}

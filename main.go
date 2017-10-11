@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"os"
 	"os/signal"
 	"strconv"
@@ -166,6 +167,7 @@ func voiceStateUpdate(s *discordgo.Session, v *discordgo.VoiceStateUpdate) {
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	var argv []string
 	var argc int
+	var err error
 	/* Ignore all bot messages */
 	if m.Author.ID == s.State.User.ID {
 		return
@@ -175,7 +177,10 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 
 	if m.Content[:1] == "!" {
-		argv, argc = getArgs(m)
+		argv, argc, err = getArgs(m)
+		if checkErrorSend(err, m, s) {
+			return
+		}
 	}
 	/* Fun stuff */
 	if strings.EqualFold(m.Content, "can we fast travel?") {
@@ -440,6 +445,42 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			}
 			s.ChannelMessageSend(m.ChannelID, argv[1])
 		}
+
+		if strings.EqualFold(argv[0], "!math") {
+			if argc <= 3 {
+				s.ChannelMessageSend(m.ChannelID, "ERROR! Too few arguments.")
+				return
+			}
+
+			n1, err := strconv.ParseFloat(argv[1], 64)
+			if checkErrorSend(err, m, s) {
+				return
+			}
+
+			n2, err := strconv.ParseFloat(argv[3], 64)
+			if checkErrorSend(err, m, s) {
+				return
+			}
+
+			var number float64
+			switch argv[2] {
+			case "/":
+				number = n1 / n2
+			case "*":
+				number = n1 * n2
+			case "+":
+				number = n1 + n2
+			case "-":
+				number = n1 - n2
+			case "^":
+				number = math.Pow(n1, n2)
+			default:
+				s.ChannelMessageSend(m.ChannelID, "Input is not a supported operation! Supported: `+, -, *, /, ^`")
+				return
+			}
+			s.ChannelMessageSend(m.ChannelID, strconv.FormatFloat(number, 'f', -1, 64))
+			return
+		}
 	}
 
 	/* Math */
@@ -504,7 +545,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 				return
 			}
 
-			itemlist, err := getValue("https://na1.api.riotgames.com/lol/static-data/v3/items?locale=en_US&tags=colloq")
+			itemlist, err := getValue("https://na1.api.riotgames.com/lol/static-data/v3/items?locale=en_US&tags=colloq", "items")
 			if checkErrorPrint(err) {
 				return
 			}
@@ -531,17 +572,28 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 				return
 			}
 
+			/* Replace breaklines in description with \n */
+			formattedDesc := strings.Replace(item.Description, "<br>", "\n", -1)
+
+			/*
+			 * Definitely not an ideal system.
+			 * This is made with the intent of adding syntax highlighting later,
+			 * But since it doesn't exist yet, it's just a waste of resources.
+			 * Oh well. ¯\_(ツ)_/¯
+			 */
+			for contains, pos := findBetween(formattedDesc, "<", ">"); contains != "" && pos != -1; contains, pos = findBetween(formattedDesc, "<", ">") {
+				formattedDesc = strings.Replace(formattedDesc, "<"+contains+">", "", -1)
+			}
+
 			var embed discordgo.MessageEmbed
 			embed.Color = 0xCC00CC
 			embed.Title = item.Name
-
 			if item.Plaintext != "" {
 				embed.Description = item.Plaintext
 			}
-
 			var description discordgo.MessageEmbedField
 			description.Name = "Description"
-			description.Value = item.Description
+			description.Value = "```" + formattedDesc + "```"
 			embed.Fields = append(embed.Fields, &description)
 			s.ChannelMessageSendEmbed(m.ChannelID, &embed)
 			return
@@ -561,14 +613,16 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 				embed.Title = "Help"
 				embed.Description = "Prints data on a certain champion"
 				usage.Name = "Usage"
-				usage.Value = "`!champ data champion options`\n Options vary. `!champ data champion help` to list options."
-				datav.Name = "Possible Values for Data"
-				datav.Value = "`lore, blurb, stats, skins, tags`"
+				usage.Value = "`!champ champion options`\n Options vary. `!champ champion help` to list options."
 				embed.Fields = append(embed.Fields, &usage)
 				embed.Fields = append(embed.Fields, &datav)
 				s.ChannelMessageSendEmbed(m.ChannelID, &embed)
 				return
 			}
+			/* !champ Lulu
+			 * Find champ from riot API
+			 * return stats and stuff
+			 */
 			return
 		}
 	}
