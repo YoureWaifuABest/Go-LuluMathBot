@@ -75,24 +75,6 @@ func findUserChannel(m *discordgo.MessageCreate, s *discordgo.Session) (string, 
 	return "", fmt.Errorf("user is not in a channel")
 }
 
-type Queue []float64
-
-/*
- * Pointer to queue in order to pass by reference
- */
-func (queue *Queue) Pop() (num float64, err error) {
-	if len(*queue) == 0 {
-		return
-	}
-	num = (*queue)[len(*queue)-1]
-
-	/* removes last element from queue */
-	*queue = (*queue)[:len(*queue)-1]
-	return
-}
-
-
-
 func runMath(mathExpr string) (float64, error) {
 	/* See https://golang.org/pkg/text/scanner/ */
 	var s scanner.Scanner

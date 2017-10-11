@@ -6,6 +6,22 @@ import (
 	"errors"
 )
 
+type Queue []float64
+
+/*
+ * Pointer to queue in order to pass by reference
+ */
+func (queue *Queue) Pop() (num float64, err error) {
+	if len(*queue) == 0 {
+		return
+	}
+	num = (*queue)[len(*queue)-1]
+
+	/* removes last element from queue */
+	*queue = (*queue)[:len(*queue)-1]
+	return
+}
+
 func (queue *Queue) Push(num float64) (err error) {
 	*queue = append(*queue, num)
 	return
