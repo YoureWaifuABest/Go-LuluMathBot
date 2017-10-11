@@ -11,7 +11,7 @@ import (
 
 func checkErrorSend(err error, m *discordgo.MessageCreate, s *discordgo.Session) bool {
 	if err != nil {
-		s.ChannelMessageSend(m.ChannelID, "Error: " + err.Error())
+		s.ChannelMessageSend(m.ChannelID, "Error: "+err.Error())
 		return true
 	}
 	return false
