@@ -147,7 +147,7 @@ func getArgs(m *discordgo.MessageCreate) (argv []string, argc int, err error) {
 								argc = -1
 								return
 							}
-							resultBytes := []byte(strconv.FormatFloat(result, 'g', -1, 64))
+							resultBytes := []byte(strconv.FormatFloat(result, 'f', -1, 64))
 							for _, c := range resultBytes {
 								tread = append(tread, c)
 							}
