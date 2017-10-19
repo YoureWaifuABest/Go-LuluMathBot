@@ -138,10 +138,10 @@ func getArgs(m *discordgo.MessageCreate) (argv []string, argc int, err error) {
 				inQuote = false
 			} else if m.Content[i] == '$' && len(m.Content) >= i+3 {
 				if m.Content[i:i+3] == "$((" {
-					for n, _ := range m.Content {
-						if len(m.Content) > n+1 && m.Content[n] == ')' && m.Content[n+1] == ')' {
+					for n, _ := range m.Content[i:] {
+						if len(m.Content[i:]) > n+1 && m.Content[i+n] == ')' && m.Content[i+n+1] == ')' {
 							var result float64
-							result, err = runMath(m.Content[i+3 : n])
+							result, err = runMath(m.Content[i+3 : i+n])
 							if err != nil {
 								argv = nil
 								argc = -1
@@ -151,7 +151,8 @@ func getArgs(m *discordgo.MessageCreate) (argv []string, argc int, err error) {
 							for _, c := range resultBytes {
 								tread = append(tread, c)
 							}
-							i = n + 1
+							i = n + i + 1
+							break
 						}
 					}
 				}
