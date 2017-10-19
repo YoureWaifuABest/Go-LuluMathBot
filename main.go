@@ -439,11 +439,15 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 
 		/* Used mostly for testing purposes of new arg rewrite */
-		if strings.EqualFold(argv[0], "!print") {
+		if strings.EqualFold(argv[0], "!echo") {
 			if argc <= 1 {
 				s.ChannelMessageSend(m.ChannelID, "ERROR! Too few arguments.")
 			}
-			s.ChannelMessageSend(m.ChannelID, argv[1])
+			var str string
+			for _, arg := range argv[1:] {
+				str = str + arg + " "
+			}
+			s.ChannelMessageSend(m.ChannelID, str)
 		}
 
 		if strings.EqualFold(argv[0], "!math") {
