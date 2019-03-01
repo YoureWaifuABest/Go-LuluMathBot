@@ -359,7 +359,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 
 		if strings.EqualFold(argv[0], "!source") {
-			s.ChannelMessageSend(m.ChannelID, "Github: https://github.com/YoureWaifuABest/Go-LuluMathBot")
+			s.ChannelMessageSend(m.ChannelID, "Github: https://github.com/kuwuda/Go-LuluMathBot")
 			return
 		}
 
